@@ -1,4 +1,4 @@
-## Hibernate Product Store - Demo Project
+## Hibernate STUDENT - OCENY - Demo Project
 ### Opis projektu
 Ten projekt został stworzony w celu zaimplementowania połączenia z bazą danych i użycia Hibernate (ORM - Object Relational Mapper). W ramach projektu został stworzono modele 'Student' i 'Oceny'.
 Między modelami zachądzą różne interakcje, jak np dodawanie Studneta, przydzielanie mu oceny z podziałem na przemiot, z możliwością wyciągnięcia oceny średniej, itp.
