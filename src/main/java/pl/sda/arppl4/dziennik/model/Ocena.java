@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-public class Oceny {
+public class Ocena {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,17 +18,16 @@ public class Oceny {
     @ManyToOne
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    Student student;
+    private Student student;
 
     private LocalDateTime czasOceny;
     private LocalDateTime czasPoprawki;
     private Double ocena;
     @Enumerated(EnumType.STRING)
-    Przedmiot przedmiot;
+    private Przedmiot przedmiot;
 
-    public Oceny(Student student, LocalDateTime czasOceny, Double ocena, Przedmiot przedmiot) {
+    public Ocena(Student student, Double ocena, Przedmiot przedmiot) {
         this.student = student;
-        this.czasOceny = czasOceny;
         this.ocena = ocena;
         this.przedmiot = przedmiot;
     }

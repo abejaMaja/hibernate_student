@@ -1,8 +1,7 @@
 package pl.sda.arppl4.dziennik.parser;
 
-import lombok.Data;
 import pl.sda.arppl4.dziennik.dao.GenericDao;
-import pl.sda.arppl4.dziennik.model.Oceny;
+import pl.sda.arppl4.dziennik.model.Ocena;
 import pl.sda.arppl4.dziennik.model.Przedmiot;
 import pl.sda.arppl4.dziennik.model.Student;
 
@@ -19,10 +18,10 @@ public class StudentParser {
 
     private final Scanner scanner;
     private final GenericDao<Student> daoStudent;
-    private final GenericDao<Oceny> daoOcena;
+    private final GenericDao<Ocena> daoOcena;
 
 
-    public StudentParser(Scanner scanner, GenericDao<Student> daoStudent, GenericDao<Oceny> daoOcena) {
+    public StudentParser(Scanner scanner, GenericDao<Student> daoStudent, GenericDao<Ocena> daoOcena) {
         this.scanner = scanner;
         this.daoStudent = daoStudent;
         this.daoOcena = daoOcena;
@@ -63,10 +62,10 @@ public class StudentParser {
         Optional<Student> wskazanyStudent = daoStudent.znajdzPoId(idS, Student.class);
         if (wskazanyStudent.isPresent()) {
             Student studentDlaSredniej = wskazanyStudent.get();
-            Set<Oceny> oceny = studentDlaSredniej.getOceny();
+            Set<Ocena> oceny = studentDlaSredniej.getOcena();
             Double suma = 0.0;
             Double iloscOcen = 0.0;
-            for (Oceny ocena: oceny) {
+            for (Ocena ocena: oceny) {
                 Double ocenaZprzedmiotu = ocena.getOcena();
                 suma += ocenaZprzedmiotu;
                 iloscOcen +=1;
@@ -88,13 +87,19 @@ public class StudentParser {
         if (wskazanyStudent.isPresent()) {
             Student studentDlaOceny = wskazanyStudent.get();
 
-            if(!czyPoprawionoOcene(studentDlaOceny)){
-                System.out.println("Podaj id oceny, którą chcesz poprawić");
-                Long idO = scanner.nextLong();
+            Set<Ocena> ocenaSet = studentDlaOceny.getOcena();
+            System.out.println("Oceny studenta o numerze indeksu to " + studentDlaOceny.getNumerIndeks() + " to " +  ocenaSet);
 
-                Optional<Oceny> wskazanaOcena = daoOcena.znajdzPoId(idO, Oceny.class);
-                if(wskazanaOcena.isPresent()){
-                    Oceny ocena = wskazanaOcena.get();
+            System.out.println("Podaj id oceny, którą chcesz poprawić");
+            Long idO = scanner.nextLong();
+
+            Optional<Ocena> ocenaDoPoprawy = znajdzAktywnaOcena(studentDlaOceny);
+            if(ocenaDoPoprawy.isPresent()){
+                Ocena ocena = ocenaDoPoprawy.get();
+                Long idOceny = ocena.getId();
+                System.out.println("idO ocena chce poprawic = " + idO);
+                System.out.println("idOceny aktywnej do poprawy " + idOceny);
+                if(idO == idOceny){
                     System.out.println("Jak ocena po poprawce ?");
                     Double newOcena = scanner.nextDouble();
                     ocena.setOcena(newOcena);
@@ -109,18 +114,20 @@ public class StudentParser {
                     System.out.println("Po poprawie ocena to " + newOcena);
                     System.out.println("Poprawy dokonano " + formatDateTime);
 
-                }else {
-                    System.out.println("Nie ma takiego id dla szukanej oceny");
+                }else{
+                    System.out.println("Nie ma oceny o podanym ID");
                 }
-
-            }else{
-                System.out.println("Nie ma takiego studenta");
+            }else {
+                System.out.println("Podanej oceny nie można już poprawić, poprawiamy tylko raz");
             }
 
-            } else {
-                System.out.println("Nie znaleziono takiego studenta");
-            }
+
+
+
+        } else {
+            System.out.println("Nie znaleziono takiego studenta");
         }
+    }
 
 
     private void handleDeleteGrade() {
@@ -131,12 +138,15 @@ public class StudentParser {
         if (wskazanyStudent.isPresent()) {
             Student studentDlaOceny = wskazanyStudent.get();
 
+            Set<Ocena> ocenaSet = studentDlaOceny.getOcena();
+            System.out.println("Oceny studenta o numerze indeksu to " + studentDlaOceny.getNumerIndeks() + " to " +  ocenaSet);
+
             System.out.println("Podaj id oceny, którą chcesz usunąć");
             Long idO = scanner.nextLong();
 
-            Optional<Oceny> wskazanaOcena = daoOcena.znajdzPoId(idO, Oceny.class);
+            Optional<Ocena> wskazanaOcena = daoOcena.znajdzPoId(idO, Ocena.class);
             if(wskazanaOcena.isPresent()){
-                Oceny ocena = wskazanaOcena.get();
+                Ocena ocena = wskazanaOcena.get();
                 daoOcena.usun(ocena);
                 System.out.println(ocena + " Ocena została usunięta " + "dla przedmiotu " + ocena.getPrzedmiot());
 
@@ -169,7 +179,8 @@ public class StudentParser {
             System.out.println("Podaj przedmiot");
             Przedmiot przedmiot = zaladujPrzedmiot();
 
-            Oceny oceny = new Oceny(studentDlaOceny, dataCzasOcena, ocena, przedmiot);
+            Ocena oceny = new Ocena(studentDlaOceny, ocena, przedmiot);
+            oceny.setCzasOceny(dataCzasOcena);
             daoOcena.dodaj(oceny);
         }else{
             System.out.println("Nie ma takiego studenta");
@@ -247,6 +258,9 @@ public class StudentParser {
         Optional<Student> wskazanyStudent = daoStudent.znajdzPoId(id, Student.class);
         if (wskazanyStudent.isPresent()) {
             Student studentDoUsuniecia = wskazanyStudent.get();
+            Set<Ocena> ocena = studentDoUsuniecia.getOcena();
+            ocena.clear();
+
             daoStudent.usun(studentDoUsuniecia);
             System.out.println("Usunięto studenta " + studentDoUsuniecia);
 
@@ -317,16 +331,16 @@ public class StudentParser {
     }
 
     private boolean czyPoprawionoOcene(Student student){
-        Optional<Oceny> ocena = znajdzAktywnaOcena(student);
+        Optional<Ocena> ocena = znajdzAktywnaOcena(student);
         return !ocena.isPresent();
     }
-    private Optional<Oceny> znajdzAktywnaOcena(Student student) {
+    private Optional<Ocena> znajdzAktywnaOcena(Student student) {
 
-        if (student.getOceny().isEmpty()) {
+        if (student.getOcena().isEmpty()) {
             return Optional.empty();
         }
 
-        for (Oceny ocena : student.getOceny()) {
+        for (Ocena ocena : student.getOcena()) {
             if (ocena.getCzasPoprawki() == null) { // sprawdzamy czy czasPoprawki został ustawiony
                 return Optional.of(ocena);
             }
